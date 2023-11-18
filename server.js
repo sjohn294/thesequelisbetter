@@ -155,61 +155,63 @@ async function addRole() {
       });
 }
 
+
+
 async function addEmployee() {
-  const [roles] = await connection.promise().query("select * from role");
-  const roleArray = roles.map(({ id, title}) => (
-    {
-      name: title,
-      value: id
-    }
-  ))
-  const [employees] = await connection.promise().query("select * from employee");
-  const managerArray1 = managers.map(({ id, first_name, last_name}) => (
-    {
-      name: first_name + " " + last_name,
-      value: id
-    }
-  ))
-  const managerArray = [...managerArray1, {name: "none", value: null}]
-    inquirer
-      .prompt([
-        {
-          name: "firstName",
-          type: "input",
-          message: "Enter the first name of the employee:"
-        },
-        {
-          name: "lastName",
-          type: "input",
-          message: "Enter the last name of the employee:"
-        },
-        {
-          name: "role",
-          type: "list",
-          choices: roleArray,
-          message: "What is the employee's role?"
-        },
-        {
-          name: "manager",
-          type: "list",
-          message: "Select Manager From List",
-          choices: managerArray,
-        }
-      ])
-      .then(function (answer) {
-        // const role = roles.find(r => r.title === answer.role);
-        connection.query("INSERT INTO employee SET ?", {
-          first_name: answer.firstName,
-          last_name: answer.lastName,
-          role_id: answer.role,
-          manager_id: answer.manager
-        }, function (err) {
-          if (err) throw err;
-          console.log("Employee added successfully!");
-          startApp();
-        });
+  // Fetch roles
+  const [roles] = await connection.promise().query("SELECT * FROM role");
+  const roleArray = roles.map(({ id, title }) => ({ name: title, value: id }));
+
+  // Fetch employees for the manager list
+  const [managers] = await connection.promise().query("SELECT * FROM employee");
+  const managerArray = managers.map(({ id, first_name, last_name }) => ({
+    name: first_name + " " + last_name,
+    value: id
+  }));
+
+  // Add an option for 'none' in the manager list
+  managerArray.push({ name: "None", value: null });
+
+  inquirer
+    .prompt([
+      {
+        name: "firstName",
+        type: "input",
+        message: "Enter the first name of the employee:"
+      },
+      {
+        name: "lastName",
+        type: "input",
+        message: "Enter the last name of the employee:"
+      },
+      {
+        name: "role",
+        type: "list",
+        choices: roleArray,
+        message: "What is the employee's role?"
+      },
+      {
+        name: "manager",
+        type: "list",
+        choices: managerArray,
+        message: "Who is the employee's manager?"
+      }
+    ])
+    .then(function (answer) {
+      connection.query("INSERT INTO employee SET ?", {
+        first_name: answer.firstName,
+        last_name: answer.lastName,
+        role_id: answer.role,
+        manager_id: answer.manager
+      }, function (err) {
+        if (err) throw err;
+        console.log("Employee added successfully!");
+        startApp();
       });
+    });
 }
+
+
 
 async function updateEmployeeRole() {
   const [employees] = await connection.promise().query("select * from employee");
